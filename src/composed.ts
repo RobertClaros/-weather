@@ -35,7 +35,7 @@ export function createMcpServer(
   iss: IssServicePort = createIssService(),
   advisor: WeatherAdvisorServicePort = createWeatherAdvisorService(weather),
 ): McpServer {
-  const server = new McpServer({ name: "weather", version: "1.0.0" });
+  const server = new McpServer({ name: "weather", version: "1.3.0" });
   registerMcpTools(server, weather, advisor);
   registerMcpIssTools(server, iss);
   return server;

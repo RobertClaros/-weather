@@ -1,0 +1,23 @@
+# --- ELIMINAR PESO MUERTO ---
+node_modules
+build
+dist
+out
+
+# --- ARCHIVOS DE SISTEMA Y GIT ---
+.git
+.gitignore
+.vscode
+.idea
+*.log
+.DS_Store
+
+# --- SECRETOS Y CONFIG LOCAL (NUNCA al contexto de build) ---
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# --- ARTEFACTOS LOCALES DE DESARROLLO Y PRUEBAS ---
+opencode.json
+opencode.jsonc

@@ -1,0 +1,80 @@
+name: Deploy Weather MCP
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # 1. Detección de Cambios
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      weather: ${{ steps.filter.outputs.weather }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Path Filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            weather:
+              - 'src/**'
+              - 'Dockerfile'
+              - '.dockerignore'
+              - 'package.json'
+              - '.github/workflows/deploy.yml'
+
+  # 2. Generación de Tag
+  generate_tag:
+    runs-on: ubuntu-latest
+    needs: changes
+    outputs:
+      version: ${{ steps.set_version.outputs.version }}
+    steps:
+      - name: Generate Version Tag
+        id: set_version
+        run: |
+          echo "version=v1.3.${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "Generated version: v1.3.${{ github.run_number }}"
+
+  # 3. Build & Push Weather MCP
+  build-weather-mcp:
+    needs: [changes, generate_tag]
+    if: needs.changes.outputs.weather == 'true'
+    runs-on: ubuntu-latest
+    env:
+      VERSION_TAG: ${{ needs.generate_tag.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Weather MCP
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            robertclaros/weather-mcp:latest
+            robertclaros/weather-mcp:${{ env.VERSION_TAG }}
+            robertclaros/weather-mcp:${{ github.sha }}
+          cache-from: type=gha,scope=weather-mcp
+          cache-to: type=gha,mode=max,scope=weather-mcp
+
+      - name: Notify n8n
+        if: success()
+        run: |
+          curl -X POST https://agent.robertclaros.com/webhook/venus-deploy \
+          -H "Content-Type: application/json" \
+          -d '{"service": "Weather MCP", "version": "${{ env.VERSION_TAG }}", "sha": "${{ github.sha }}"}'
