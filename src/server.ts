@@ -1,8 +1,8 @@
 import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
-import { createMcpWeatherServer } from "./composed.js";
+import { createMcpServer } from "./composed.js";
 
 async function main() {
-  const server = createMcpWeatherServer();
+  const server = createMcpServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Weather MCP Server running on stdio");
