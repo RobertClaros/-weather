@@ -40,12 +40,26 @@ docker push robertclaros/weather-mcp:latest
 ## 🚢 Arranque en Producción (HTTP remoto)
 
 ```bash
-docker-compose -f docker-compose.weather.yml up -d
-docker-compose -f docker-compose.weather.yml ps
-docker-compose -f docker-compose.weather.yml logs -f
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f
 ```
 
 Healthcheck cada 30s contra `/healthz` (reinicio automático tras 3 fallos).
+
+## 🏠 Arranque Local / Dev (HTTP)
+
+El puerto 4000 queda reservado para producción, por eso el compose dev expone
+otro puerto del host (default `4001`) configurable con `WEATHER_PORT`.
+
+```bash
+docker compose -f docker-compose.dev.yml up -d                 # 127.0.0.1:4001
+WEATHER_PORT=4999 docker compose -f docker-compose.dev.yml up -d   # puerto custom
+docker compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml logs -f
+```
+
+Cliente MCP se conecta a `http://127.0.0.1:<WEATHER_PORT>/mcp`.
 
 ### Nginx (exposición pública)
 
@@ -104,7 +118,7 @@ curl -X POST http://localhost:4000/ \
 
 ## 🛠 Troubleshooting
 
-1. `docker-compose -f docker-compose.weather.yml logs weather-mcp`
-2. `docker-compose -f docker-compose.weather.yml restart weather-mcp`
-3. Override local para probar: `docker compose -f docker-compose.weather.yml up --build weather-mcp`
-4. Limpieza: `docker compose -f docker-compose.weather.yml down`
+1. `docker compose -f docker-compose.dev.yml logs weather-mcp`
+2. `docker compose -f docker-compose.dev.yml restart weather-mcp`
+3. Override local para probar: `docker compose -f docker-compose.dev.yml up --build weather-mcp`
+4. Limpieza: `docker compose -f docker-compose.dev.yml down`
