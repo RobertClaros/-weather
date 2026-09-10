@@ -27,12 +27,37 @@ const server = createServer((req, res) => {
     res.end("ok");
     return;
   }
-  nodeHandler(req, res).catch((error) => {
-    console.error("[weather-mcp-http] unhandled error:", error);
+
+  const chunks: Buffer[] = [];
+  req.on("data", (chunk: Buffer) => chunks.push(chunk));
+  req.on("error", (error) => {
+    console.error("[weather-mcp-http] request error:", error);
     if (!res.destroyed) {
       res.writeHead(500, { "content-type": "application/json" });
       res.end(JSON.stringify({ error: "Internal Server Error" }));
     }
+  });
+  req.on("end", () => {
+    const raw = Buffer.concat(chunks).toString("utf8");
+    console.error(
+      `[http] ${new Date().toISOString()} ${req.method ?? "-"} ${req.url ?? "-"}` +
+        (raw ? ` ${raw}` : ""),
+    );
+    let parsed: unknown;
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = undefined;
+      }
+    }
+    nodeHandler(req, res, parsed).catch((error) => {
+      console.error("[weather-mcp-http] unhandled error:", error);
+      if (!res.destroyed) {
+        res.writeHead(500, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: "Internal Server Error" }));
+      }
+    });
   });
 });
 
